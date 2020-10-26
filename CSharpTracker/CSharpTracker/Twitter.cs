@@ -95,6 +95,40 @@ namespace CSharpTracker
         }
         #endregion
 
+        #region Publish Tweet
+        public async Task<long> Tweet(string body)
+        {
+            if (twitterClient == null)
+                throw new NullReferenceException("Twitter client is null");
 
+            if (body.Length > 240)
+                throw new ArgumentOutOfRangeException("Tweet should be in 240 characters only");
+
+            var tweet = await twitterClient.Tweets.PublishTweetAsync(body);
+
+            return tweet.Id;
+        }
+
+        public async Task<long> Tweet(string body, string filePath)
+        {
+            if (twitterClient == null)
+                throw new NullReferenceException("Twitter client is null");
+
+            if (body.Length > 240)
+                throw new ArgumentOutOfRangeException("Tweet should be in 240 characters only");
+
+            if (string.IsNullOrEmpty(filePath))
+                throw new ArgumentNullException("FilePath is empty");
+
+            var tweetinviLogoBinary = File.ReadAllBytes(filePath);
+            var uploadedImage = await twitterClient.Upload.UploadTweetImageAsync(tweetinviLogoBinary);
+            var tweet = await twitterClient.Tweets.PublishTweetAsync(new PublishTweetParameters("uhmm")
+            {
+                Medias = { uploadedImage }
+            });
+
+            return tweet.Id;
+        }
+        #endregion
     }
 }
