@@ -23,6 +23,7 @@ namespace CSharpTracker
         public MainWindow()
         {
             InitializeComponent();
+            Twitter testClass = new Twitter();
         }
     }
 }
