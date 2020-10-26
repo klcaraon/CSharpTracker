@@ -9,6 +9,8 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using System.IO;
 using Tweetinvi.Parameters;
+using Tweetinvi.Parameters.V2;
+using Tweetinvi.Models.V2;
 
 namespace CSharpTracker
 {
@@ -17,7 +19,7 @@ namespace CSharpTracker
         private string _appToken;
         private string _appTokenSecret;
         private string _consumerKey;
-        private string _consumerSecretKey;
+        private string _consumerKeySecret;
         private string _bearerToken;
         private TwitterClient twitterClient;
 
@@ -34,15 +36,15 @@ namespace CSharpTracker
             }
         }
 
-        public string ConsumerSecretKey
+        public string ConsumerKeySecret
         {
             get
             {
-                return _consumerSecretKey;
+                return _consumerKeySecret;
             }
             set
             {
-                _consumerSecretKey = value;
+                _consumerKeySecret = value;
             }
         }
 
@@ -55,7 +57,7 @@ namespace CSharpTracker
             Debug.WriteLine(_appToken);
             Debug.WriteLine(_appTokenSecret);
 
-            twitterClient = new TwitterClient(_consumerKey, _consumerSecretKey, _appToken, _appTokenSecret);
+            twitterClient = new TwitterClient(_consumerKey, _consumerKeySecret, _appToken, _appTokenSecret);
         }
 
         #region Authentication
@@ -86,17 +88,30 @@ namespace CSharpTracker
             var user = await twitterClient.Users.GetAuthenticatedUserAsync();
 
             ConsumerKey = userCredentials.AccessToken;
-            ConsumerSecretKey = userCredentials.AccessTokenSecret;
+            ConsumerKeySecret = userCredentials.AccessTokenSecret;
 
             if (twitterClient == null)
                 return false;
 
             return true;
         }
+
+        private bool CheckTwitterClient()
+        {
+            if (twitterClient == null)
+                return false;
+
+            if (String.IsNullOrEmpty(ConsumerKey) || String.IsNullOrEmpty(ConsumerKeySecret))
+                return false;
+
+            return true;
+        }
+
         #endregion
 
         #region Publish Tweet
-        public async Task<long> Tweet(string body)
+
+        public async Task<long> PostTweet(string body)
         {
             if (twitterClient == null)
                 throw new NullReferenceException("Twitter client is null");
@@ -109,7 +124,7 @@ namespace CSharpTracker
             return tweet.Id;
         }
 
-        public async Task<long> Tweet(string body, string filePath)
+        public async Task<long> PostTweet(string body, string filePath)
         {
             if (twitterClient == null)
                 throw new NullReferenceException("Twitter client is null");
@@ -129,6 +144,51 @@ namespace CSharpTracker
 
             return tweet.Id;
         }
+
+        public async Task<long> PostTweet(string body, string filePath, DateTime schedule)
+        {
+            return 0;
+        }
+
+        #endregion
+
+        #region Retrieve Tweet
+
+        public async void GetTweet(string tweetId)
+        {
+            if (twitterClient == null)
+                throw new NullReferenceException("Twitter client is null");
+
+            var publishedTweet = await twitterClient.Tweets.GetTweetAsync(1312077189051940866);
+
+            var tweetResponse = await twitterClient.TweetsV2.GetTweetAsync(new GetTweetV2Parameters(1312077189051940866)
+            {
+                MediaFields =
+                {
+                    TweetResponseFields.Media.OrganicMetrics,
+                    TweetResponseFields.Media.PublicMetrics,
+                    TweetResponseFields.Media.NonPublicMetrics
+                },
+                Expansions =
+                {
+                    TweetResponseFields.Expansions.AuthorId,
+                    TweetResponseFields.Expansions.ReferencedTweetsId,
+                    TweetResponseFields.Expansions.AttachmentsMediaKeys,
+                    TweetResponseFields.Expansions.EntitiesMentionsUsername
+                },
+                TweetFields =
+                {
+                    TweetResponseFields.Tweet.Attachments,
+                    TweetResponseFields.Tweet.Entities,
+                    TweetResponseFields.Tweet.CreatedAt,
+                    TweetResponseFields.Tweet.Text
+                },
+                UserFields = TweetResponseFields.User.ALL
+            });
+
+            // return TODO: Create a Tweet Object
+        }
+
         #endregion
     }
 }
