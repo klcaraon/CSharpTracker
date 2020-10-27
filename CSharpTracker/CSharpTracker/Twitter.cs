@@ -154,7 +154,7 @@ namespace CSharpTracker
 
         #region Retrieve Tweet
 
-        public async void GetTweet(string tweetId)
+        public async Task<Tweet> GetTweet(string tweetId)
         {
             if (twitterClient == null)
                 throw new NullReferenceException("Twitter client is null");
@@ -186,7 +186,19 @@ namespace CSharpTracker
                 UserFields = TweetResponseFields.User.ALL
             });
 
-            // return TODO: Create a Tweet Object
+            return new Tweet()
+            {
+                UserID = 0,
+                Username = tweetResponse.Tweet.AuthorId,
+                TweetID = tweetResponse.Tweet.Id,
+                Body = tweetResponse.Tweet.Text,
+                ImpressionCount = tweetResponse.Tweet.OrganicMetrics.ImpressionCount,
+                ProfileClickCount = tweetResponse.Tweet.OrganicMetrics.UserProfileClicks,
+                LikeCount = tweetResponse.Tweet.OrganicMetrics.LikeCount,
+                RetweetCount = tweetResponse.Tweet.OrganicMetrics.RetweetCount,
+                Posted = true,
+                Schedule = null
+            };
         }
 
         #endregion
