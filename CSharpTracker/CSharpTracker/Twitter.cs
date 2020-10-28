@@ -23,7 +23,6 @@ namespace CSharpTracker
         private string _bearerToken;
         private TwitterClient twitterClient;
 
-
         public string ConsumerKey
         {
             get
@@ -113,7 +112,7 @@ namespace CSharpTracker
 
         public async Task<long> PostTweet(string body)
         {
-            if (twitterClient == null)
+            if (!CheckTwitterClient())
                 throw new NullReferenceException("Twitter client is null");
 
             if (body.Length > 240)
@@ -126,7 +125,7 @@ namespace CSharpTracker
 
         public async Task<long> PostTweet(string body, string filePath)
         {
-            if (twitterClient == null)
+            if (!CheckTwitterClient())
                 throw new NullReferenceException("Twitter client is null");
 
             if (body.Length > 240)
@@ -137,7 +136,7 @@ namespace CSharpTracker
 
             var tweetinviLogoBinary = File.ReadAllBytes(filePath);
             var uploadedImage = await twitterClient.Upload.UploadTweetImageAsync(tweetinviLogoBinary);
-            var tweet = await twitterClient.Tweets.PublishTweetAsync(new PublishTweetParameters("uhmm")
+            var tweet = await twitterClient.Tweets.PublishTweetAsync(new PublishTweetParameters(body)
             {
                 Medias = { uploadedImage }
             });
@@ -145,8 +144,63 @@ namespace CSharpTracker
             return tweet.Id;
         }
 
-        public async Task<long> PostTweet(string body, string filePath, DateTime schedule)
+        public async Task<long> PostTweet(string body, DateTime schedule, string accountID, string userID, bool scheduled = false)
         {
+            if (!CheckTwitterClient())
+                throw new NullReferenceException("Twitter client is null");
+
+            if (body.Length > 240)
+                throw new ArgumentOutOfRangeException("Tweet should be in 240 characters only");
+
+            if (scheduled && !string.IsNullOrEmpty(accountID) && !string.IsNullOrEmpty(userID))
+            {
+                var test = await twitterClient.Execute.RequestAsync(request =>
+                {
+                    request.Url = "https://ads-api.twitter.com/8/accounts/"
+                                    + accountID
+                                    + "/scheduled_tweets?"
+                                    + "text=" + body
+                                    + "&scheduled_at=" + schedule.ToUniversalTime()
+                                    + "&as_user_id=" + userID;
+                        
+                    request.HttpMethod = HttpMethod.POST;
+                });
+
+                var jsonResponse = test.Content;
+            }
+
+            return 0;
+        }
+
+        public async Task<long> PostTweet(string body, string filePath, DateTime schedule, string accountID, string userID, bool scheduled = false)
+        {
+            if (!CheckTwitterClient())
+                throw new NullReferenceException("Twitter client is null");
+
+            if (body.Length > 240)
+                throw new ArgumentOutOfRangeException("Tweet should be in 240 characters only");
+
+            if (scheduled && !string.IsNullOrEmpty(accountID) && !string.IsNullOrEmpty(userID))
+            {
+                var tweetinviLogoBinary = File.ReadAllBytes(filePath);
+                var uploadedImage = await twitterClient.Upload.UploadTweetImageAsync(tweetinviLogoBinary);
+
+                var test = await twitterClient.Execute.RequestAsync(request =>
+                {
+                    request.Url = "https://ads-api.twitter.com/8/accounts/"
+                                    + accountID
+                                    + "/scheduled_tweets?"
+                                    + "text=" + body
+                                    + "&scheduled_at=" + schedule.ToUniversalTime()
+                                    + "&as_user_id=" + userID
+                                    + "&media_keys=" + uploadedImage;
+
+                    request.HttpMethod = HttpMethod.POST;
+                });
+
+                var jsonResponse = test.Content;
+            }
+
             return 0;
         }
 
@@ -156,12 +210,13 @@ namespace CSharpTracker
 
         public async Task<Tweet> GetTweet(string tweetId)
         {
-            if (twitterClient == null)
+            if (!CheckTwitterClient())
                 throw new NullReferenceException("Twitter client is null");
 
-            var publishedTweet = await twitterClient.Tweets.GetTweetAsync(1312077189051940866);
+            // Test Data: 1312077189051940866
+            //var publishedTweet = await twitterClient.Tweets.GetTweetAsync(Convert.ToInt64(tweetId));
 
-            var tweetResponse = await twitterClient.TweetsV2.GetTweetAsync(new GetTweetV2Parameters(1312077189051940866)
+            var tweetResponse = await twitterClient.TweetsV2.GetTweetAsync(new GetTweetV2Parameters(tweetId)
             {
                 MediaFields =
                 {
@@ -200,6 +255,8 @@ namespace CSharpTracker
                 Schedule = null
             };
         }
+
+
 
         #endregion
     }
