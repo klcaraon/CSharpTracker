@@ -256,7 +256,24 @@ namespace CSharpTracker
             };
         }
 
+        public async Task<Tweet> GetTweet(string tweetId, string accountID, string userID = "", bool scheduled = false)
+        {
+            if (!CheckTwitterClient())
+                throw new NullReferenceException("Twitter client is null");
 
+            if (scheduled && !string.IsNullOrEmpty(accountID) && !string.IsNullOrEmpty(userID))
+            {
+                var test = await twitterClient.Execute.RequestAsync(request =>
+                {
+                    request.Url = "https://ads-api.twitter.com/8/accounts/" + accountID + "/scheduled_tweets";
+                    request.HttpMethod = HttpMethod.GET;
+                });
+
+                var jsonResponse = test.Content;
+            }
+
+            return null;
+        }
 
         #endregion
     }
