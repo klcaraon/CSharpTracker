@@ -24,5 +24,11 @@ namespace CSharpTracker
         {
             InitializeComponent();
         }
+
+        private async void Button_Click(object sender, RoutedEventArgs e)
+        {
+            InstagramWindow instagram = new InstagramWindow();
+            instagram.ShowDialog();
+        }
     }
 }
